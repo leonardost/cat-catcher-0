@@ -1,10 +1,35 @@
 pico-8 cartridge // http://www.pico-8.com
 version 18
 __lua__
+--[[
+  05/08/2019 23:00
+  ----------------
+  trying to come up with a good
+  class structure to build a game
+  upon. i'm not really happy with
+  the actor function because the
+  actual actors (girl, cats) have
+  to define their own update()
+  function.
+  
+  anyway, what we have here is
+  already enough to build a simple
+  game.
+--]]
+
 function _init()
+  graphics = {}
+  updatables = {}
+
   cat = cat_actor(108, 64)
   bigcat = bigcat_actor(128, 80)
   girl = girl_actor(32, 56)
+  add(graphics, cat)
+  add(graphics, bigcat)
+  add(graphics, girl)
+  add(updatables, cat)
+  add(updatables, bigcat)
+  add(updatables, girl)
   
   local girl1 = sprite(2, 2, { 20, 21, 36, 37 })
   local girl2 = sprite(2, 2, { 22, 23, 38, 39 })
@@ -14,6 +39,7 @@ function _init()
   animation_idle.add_frame(girl2, 2)
   animation_idle.add_frame(girl3, 5)
   animation_idle.add_frame(girl2, 2)
+  add(updatables, animation_idle)
   
   local girl4 = sprite(2, 2, { 26, 27, 42, 43 })
   local girl5 = sprite(2, 2, { 28, 29, 44, 45 })    
@@ -26,22 +52,19 @@ function _init()
   animation_yawn.add_frame(girl4, 13)
   animation_yawn.add_frame(girl3, 20)  
   animation_yawn.add_frame(girl2, 5)
+  add(updatables, animation_yawn)
 end
 
 function _update()
-  cat.update()
-  bigcat.update()
-  girl.update()
-  animation_idle.update()
-  animation_yawn.update()
+  for obj in all(updatables) do
+    obj.update()
+  end
   
   if btn(⬅️) then
-    girl.walk()
-    girl.x -= 2
+    girl.walk(-2)
   end
   if btn(➡️) then
-    girl.walk()
-    girl.x += 2
+    girl.walk(2)
   end
   -- stops walking
   if girl.is_walking() and not btn(⬅️) and not btn(➡️) then
@@ -51,9 +74,9 @@ end
 
 function _draw()
   cls()
-  girl.draw()
-  cat.draw()
-  bigcat.draw()
+  for gfx in all(graphics) do
+    gfx.draw()
+  end
   animation_idle.draw(0, 0)
   animation_yawn.draw(32, 0)
   print("girl state = " .. girl.get_current_state(), 10, 112)
@@ -160,9 +183,9 @@ function girl_actor(x, y)
   animation_yawn.add_frame(girl2, 5)
   animation_yawn.add_frame(girl3, 20)
   animation_yawn.add_frame(girl4, 13)
-  animation_yawn.add_frame(girl5, 40)  
+  animation_yawn.add_frame(girl5, 40)
   animation_yawn.add_frame(girl4, 13)
-  animation_yawn.add_frame(girl3, 20)  
+  animation_yawn.add_frame(girl3, 20)
   animation_yawn.add_frame(girl2, 5)
   local yawn_state = state(
     "yawn",
@@ -199,7 +222,6 @@ function girl_actor(x, y)
      	  girl.change_to_state(2)
       elseif idle_t > 300 then
         girl.change_to_state(3)
-        t = 0
         idle_t = 0
       end
     end
@@ -207,14 +229,13 @@ function girl_actor(x, y)
     girl.update_state()
   end
   
-  function girl.walk()
+  function girl.walk(distance)
+    girl.x += distance
     girl.change_to_state(4)
-    t = 0
   end
 
   function girl.idle()
     girl.change_to_state(1)
-    t = 0
   end
 
   function girl.is_walking()
