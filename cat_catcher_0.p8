@@ -24,11 +24,11 @@ function _init()
   t = 0
   graphics = {}
   updatables = {}
-  current_floor = 1
+  current_floor = 0
 
   cat = cat_actor(108, 64)
   bigcat = bigcat_actor(128, 80)
-  girl = girl_actor(8, 80)
+  girl = girl_actor(8, 48 + 32 * current_floor)
   add(graphics, cat)
   add(graphics, bigcat)
   add(graphics, girl)
@@ -59,7 +59,7 @@ function _init()
   animation_yawn.add_frame(girl2, 5)
   add(updatables, animation_yawn)
   
-  elevator = elevator_actor(8, 80)
+  elevator = elevator_actor(8, 48 + 32 * current_floor)
   add(graphics, elevator)
   add(updatables, elevator)
   
@@ -98,13 +98,15 @@ function _update()
 end
 
 function change_floor(direction)
-  if direction == -1 and current_floor > 0 then
+  if direction == -1 and current_floor > 0 and not elevator.is_changing_floors() then
     current_floor -= 1
+    elevator.move_to_floor(current_floor)
   end
-  if direction == 1 and current_floor < 2 then
+  if direction == 1 and current_floor < 2 and not elevator.is_changing_floors() then
     current_floor += 1
+    elevator.move_to_floor(current_floor)
   end
-  elevator.move_to_floor(current_floor)
+
 end
 
 function _draw()
@@ -184,7 +186,7 @@ end
 function girl_actor(x, y)
   local t = 0
   local idle_t = 0
-  local floor = 1
+  local floor = 0
 
   local girl1 = sprite(2, 2, { 20, 21, 36, 37 })
   local animation_idle = animation()
@@ -408,19 +410,19 @@ function elevator_actor(x, y)
   function self.draw()
     rect(x, y, x + 15, y + 15, 5)
     if state != 0 then
-      rectfill(x + 1, y + 1, x + 14, y + 14, 6)
+      rectfill(x + 1, y + 1, x + 7 - gap_width, y + 14, 6)
+      rectfill(x + 8 + gap_width, y + 1, x + 14, y + 14, 6)
 		    local left_gap = x + 7 - gap_width
 		    local right_gap = x + 8 + gap_width
 		    line(left_gap, y + 1, left_gap, y + 14, 13)
 		    line(right_gap, y + 1, right_gap, y + 14, 7)
-		    if gap_width > 0 then
-		      rectfill(left_gap + 1, y + 1, right_gap - 1, y + 14, 0)
-		    end
 		  end
+		  --[[
 		  print("elevator state = " .. state, 0, 96)
 		  print("destination y = " .. 16 + destination_floor * 32, 0, 104)
 		  print("elevator y = " .. y, 0, 112)
 		  print("gap_width = " .. gap_width, 0, 120)
+		  --]]
   end
 
   function self.update()
@@ -433,9 +435,9 @@ function elevator_actor(x, y)
       end
     elseif state == 2 then
       if y < 48 + destination_floor * 32 then
-        y += 2
+        y += 4
       elseif y > 48 + destination_floor * 32 then
-        y -= 2
+        y -= 4
       else
         state = 3
       end
@@ -448,7 +450,7 @@ function elevator_actor(x, y)
   end
 
   function self.move_to_floor(floor)
-    if state != 0 then return end
+    if self.is_changing_floors() then return end
     state = 1
     destination_floor = floor
   end
