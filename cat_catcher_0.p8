@@ -21,13 +21,14 @@ __lua__
 --]]
 
 function _init()
+  t = 0
   graphics = {}
   updatables = {}
-  t = 0
+  current_floor = 1
 
   cat = cat_actor(108, 64)
   bigcat = bigcat_actor(128, 80)
-  girl = girl_actor(32, 56)
+  girl = girl_actor(8, 80)
   add(graphics, cat)
   add(graphics, bigcat)
   add(graphics, girl)
@@ -58,9 +59,11 @@ function _init()
   animation_yawn.add_frame(girl2, 5)
   add(updatables, animation_yawn)
   
-  elevator = elevator_actor(0, 32)
+  elevator = elevator_actor(8, 80)
   add(graphics, elevator)
   add(updatables, elevator)
+  
+  
 end
 
 function _update()
@@ -70,10 +73,17 @@ function _update()
     obj.update()
   end
 
-  if t == 30 then
-    elevator.move_to_floor(0)
+  if elevator.is_changing_floors() then
+    girl.y = elevator.get_y()
   end
   
+  if btnp(⬆️) then
+    change_floor(-1)
+  end
+  if btnp(⬇️) then
+    change_floor(1)
+  end
+  --[[
   if btn(⬅️) then
     girl.walk(-2)
   end
@@ -84,6 +94,17 @@ function _update()
   if girl.is_walking() and not btn(⬅️) and not btn(➡️) then
     girl.idle()
   end
+  --]]
+end
+
+function change_floor(direction)
+  if direction == -1 and current_floor > 0 then
+    current_floor -= 1
+  end
+  if direction == 1 and current_floor < 2 then
+    current_floor += 1
+  end
+  elevator.move_to_floor(current_floor)
 end
 
 function _draw()
@@ -93,8 +114,8 @@ function _draw()
   end
   animation_idle.draw(0, 0)
   animation_yawn.draw(32, 0)
-  
 end
+
 -->8
 function sprite(w, h, sprites)
   local w = w
@@ -163,6 +184,7 @@ end
 function girl_actor(x, y)
   local t = 0
   local idle_t = 0
+  local floor = 1
 
   local girl1 = sprite(2, 2, { 20, 21, 36, 37 })
   local animation_idle = animation()
@@ -206,7 +228,7 @@ function girl_actor(x, y)
     "walk",
     animation_walk
   )
-  
+
   local girl = actor(x, y, {
     idle_state,
     blink_state,
@@ -214,7 +236,7 @@ function girl_actor(x, y)
     walk_state
   })
   
-  girl.update = function()
+  function girl.update()
     t += 1
     if girl.is_idle() then
       idle_t += 1
@@ -250,6 +272,14 @@ function girl_actor(x, y)
 
   function girl.is_idle()
     return girl.current_state >= 1 and girl.current_state <= 3
+  end
+
+  function girl.change_floor(direction)
+    if direction == -1 and floor > -1 then
+      floor -= 1
+    elseif direction == 1 and floor < 2 then
+      floor += 1
+    end
   end
 
   blink_state.set_finished_callback(girl.idle)
@@ -418,8 +448,17 @@ function elevator_actor(x, y)
   end
 
   function self.move_to_floor(floor)
+    if state != 0 then return end
     state = 1
     destination_floor = floor
+  end
+  
+  function self.get_y()
+    return y
+  end
+
+  function self.is_changing_floors()
+    return state != 0
   end
 
 	 return self
@@ -428,10 +467,10 @@ end
 __gfx__
 00000000500500555005000544444444000000000000000099999999044444403333333311111111000000000000000000000000000000000000000000000000
 00000000555500055555000544b4b4440000000000000000aaaaaaaa44999944b3b3b3a3cccccccc000000000000000000000000000000000000000000000000
-00700700a55a0005a55a0005bbbbbbb4000000000000ccc0aaaaaaaa49499494bbbbbbbbccc7c7cc000000000000000000000000000000000000000000000000
-000770005555555555555555bbbbbbb400770770000ccc0caaaaaaaa49944994abbbbbbbcccccc77000000000000000000000000000000000000000000000000
-000770005555555555555555b3bb3bb40700000000cccc77aaaaaaaa49944994bbbbabbb77cccccc000000000000000000000000000000000000000000000000
-007007005005050550500505bbbbbbb407077707ccc77770aaaaaaaa49499494bbbbbbbacccccccc000000000000000000000000000000000000000000000000
+00000000a55a0005a55a0005bbbbbbb4000000000000ccc0aaaaaaaa49499494bbbbbbbbccc7c7cc000000000000000000000000000000000000000000000000
+000000005555555555555555bbbbbbb400770770000ccc0caaaaaaaa49944994abbbbbbbcccccc77000000000000000000000000000000000000000000000000
+000000005555555555555555b3bb3bb40700000000cccc77aaaaaaaa49944994bbbbabbb77cccccc000000000000000000000000000000000000000000000000
+000000005005050550500505bbbbbbb407077707ccc77770aaaaaaaa49499494bbbbbbbacccccccc000000000000000000000000000000000000000000000000
 000000005005050550550555b3bb3bbb007777700c000000aaaaaaaa44999944bbabbbbbcccc7cc7000000000000000000000000000000000000000000000000
 000000005005050505000005b3333bbb00777770000000009999999904444440bbbbbbbbcccccccc000000000000000000000000000000000000000000000000
 50000005000066505000000500000000000002222224440000000222222444000000022222244400000002222224440000000222222444000000022222244400
