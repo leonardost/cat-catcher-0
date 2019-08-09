@@ -26,7 +26,7 @@ function _init()
   updatables = {}
   current_floor = 0
 
-  cat = cat_actor(108, 64)
+  cat = cat_actor(108, 56)
   bigcat = bigcat_actor(128, 80)
   girl = girl_actor(8, 48 + 32 * current_floor)
   add(graphics, cat)
@@ -57,7 +57,6 @@ function _init()
   animation_yawn.add_frame(girl4, 13)
   animation_yawn.add_frame(girl3, 20)  
   animation_yawn.add_frame(girl2, 5)
-  add(updatables, animation_yawn)
   
   elevator = elevator_actor(8, 48 + 32 * current_floor)
   add(graphics, elevator)
@@ -101,10 +100,12 @@ function change_floor(direction)
   if direction == -1 and current_floor > 0 and not elevator.is_changing_floors() then
     current_floor -= 1
     elevator.move_to_floor(current_floor)
+    girl.change_floor(direction)
   end
   if direction == 1 and current_floor < 2 and not elevator.is_changing_floors() then
     current_floor += 1
     elevator.move_to_floor(current_floor)
+    girl.change_floor(direction)
   end
 
 end
@@ -114,8 +115,7 @@ function _draw()
   for gfx in all(graphics) do
     gfx.draw()
   end
-  animation_idle.draw(0, 0)
-  animation_yawn.draw(32, 0)
+  print("current floor = " .. current_floor, 0, 120)
 end
 
 -->8
@@ -279,8 +279,10 @@ function girl_actor(x, y)
   function girl.change_floor(direction)
     if direction == -1 and floor > -1 then
       floor -= 1
+      idle_t = 0
     elseif direction == 1 and floor < 2 then
       floor += 1
+      idle_t = 0
     end
   end
 
@@ -429,8 +431,9 @@ function elevator_actor(x, y)
     t += 1
 
     if state == 1 then
-      gap_width -= 1
-      if gap_width == 0 then
+      gap_width -= 2
+      if gap_width <= 0 then
+        gap_width = 0
         state = 2
       end
     elseif state == 2 then
@@ -442,8 +445,9 @@ function elevator_actor(x, y)
         state = 3
       end
     elseif state == 3 then
-      gap_width += 1
-      if gap_width == 7 then
+      gap_width += 2
+      if gap_width >= 7 then
+        gap_width = 7
         state = 0
       end
     end
