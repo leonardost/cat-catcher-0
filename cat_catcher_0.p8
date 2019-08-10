@@ -22,60 +22,37 @@ __lua__
 
 function _init()
   t = 0
-  graphics = {}
-  updatables = {}
+  -- actors can have .draw()
+  -- and/or .update() methods
+  actors = {}
+
   current_floor = 0
   score = 0
   caught_cats = 0
+  floor_base_y = 40
 
-  cat = cat_actor(108, 48)
-  cat2 = cat_actor2(128, 48)
-  bigcat = bigcat_actor(128, 104)
-  bigcat2 = bigcat_actor2(16, 104)
+  cat = cat_actor(0)
+  cat2 = cat_actor2(0)
+  bigcat = bigcat_actor(1)
+  bigcat2 = bigcat_actor2(2)
   girl = girl_actor(8, 40 + 32 * current_floor)
-  add(graphics, cat)
-  add(graphics, cat2)
-  add(graphics, bigcat)
-  add(graphics, bigcat2)
-  add(graphics, girl)
-  add(updatables, cat)
-  add(updatables, cat2)
-  add(updatables, bigcat)
-  add(updatables, bigcat2)
-  add(updatables, girl)
-  
-  local girl1 = sprite(2, 2, { 20, 21, 36, 37 })
-  local girl2 = sprite(2, 2, { 22, 23, 38, 39 })
-  local girl3 = sprite(2, 2, { 24, 25, 40, 41 })  
-  animation_idle = animation()
-  animation_idle.add_frame(girl1, 30)
-  animation_idle.add_frame(girl2, 2)
-  animation_idle.add_frame(girl3, 5)
-  animation_idle.add_frame(girl2, 2)
-  add(updatables, animation_idle)
-  
-  local girl4 = sprite(2, 2, { 26, 27, 42, 43 })
-  local girl5 = sprite(2, 2, { 28, 29, 44, 45 })    
-  animation_yawn = animation()
-  animation_yawn.add_frame(girl1, 30)
-  animation_yawn.add_frame(girl2, 5)
-  animation_yawn.add_frame(girl3, 20)
-  animation_yawn.add_frame(girl4, 13)
-  animation_yawn.add_frame(girl5, 40)  
-  animation_yawn.add_frame(girl4, 13)
-  animation_yawn.add_frame(girl3, 20)  
-  animation_yawn.add_frame(girl2, 5)
+  add(actors, cat)
+  add(actors, cat2)
+  add(actors, bigcat)
+  add(actors, bigcat2)
+  add(actors, girl)
   
   elevator = elevator_actor(8, 40 + 32 * current_floor)
-  add(graphics, elevator)
-  add(updatables, elevator)
+  add(actors, elevator)
 end
 
 function _update()
   t += 1
 
-  for obj in all(updatables) do
-    obj.update()
+  for obj in all(actors) do
+    if obj.update != nil then
+      obj.update()
+    end
   end
 
   if elevator.is_changing_floors() then
@@ -88,6 +65,10 @@ function _update()
   if btn(⬇️) then
     change_floor(1)
   end
+  if btn(🅾️) then
+    catch()
+ 	end
+ 
   --[[
   if btn(⬅️) then
     girl.walk(-2)
@@ -119,16 +100,30 @@ function change_floor(direction)
     elevator.change_floor(direction)
     girl.change_floor(direction)
   end
+end
 
+function catch()
+  for actor in all(actors) do
+    if 
+      actor.is_cat
+      and girl.is_close_enough_to(actor)
+      and actor.caught()
+    then
+	 	   score += 10
+	 	   del(actors, actor)
+    end
+  end
 end
 
 function _draw()
   cls()
   map(0, 0, 0, 0, 16, 16)
-  for gfx in all(graphics) do
-    gfx.draw()
+  for gfx in all(actors) do
+    if gfx.draw != nil then
+      gfx.draw()
+    end
   end
-  print("score = " .. score, 0, 0)
+  print("score = " .. score, 0, 0, 7)
 end
 
 -->8
@@ -299,6 +294,15 @@ function girl_actor(x, y)
     end
   end
 
+  function girl.is_close_enough_to(cat)
+    if 
+      girl.x + 16 + 8 >= cat.x
+      and floor == cat.get_floor()
+    then
+      return true
+    end
+  end
+
   blink_state.set_finished_callback(girl.idle)
   yawn_state.set_finished_callback(girl.idle)
   
@@ -357,42 +361,69 @@ function state(name, animation)
 end
 
 -->8
-function cat_actor(x, y)
+function cat_actor(floor)
+  local life = 1
   local cat1 = sprite(1, 1, { 1 })
   local cat2 = sprite(1, 1, { 2 })
   local animation = animation()
+  local floor = floor
   animation.add_frame(cat1, 8)
   animation.add_frame(cat2, 8)
   local walking = state(
   	 "walking",
   	 animation
   )
-  local cat = actor(x, y, { walking })
+  local cat = actor(
+    128,
+    floor_base_y + 8 + floor * 32,
+    { walking }
+  )
   
-  cat.update = function()
+  function cat.update()
     cat.update_state()
-    cat.x -= 2
+    cat.x -= 1
     if cat.x < -8 then
       cat.x = 128
     end
+  end
+
+  function cat.caught()
+    life -= 1
+    if life == 0 then
+      sfx(8)
+      return true
+    end
+    return false
+  end
+  
+  cat.is_cat = true
+
+  function cat.get_floor()
+    return floor
   end
   
   return cat
 end
 
-function cat_actor2(x, y)
+function cat_actor2(floor)
+  local life = 1
   local cat1 = sprite(1, 1, { 10 })
   local cat2 = sprite(1, 1, { 11 })
   local animation = animation()
+  local floor = floor
   animation.add_frame(cat1, 8)
   animation.add_frame(cat2, 8)
   local walking = state(
   	 "walking",
   	 animation
   )
-  local cat = actor(x, y, { walking })
+  local cat = actor(
+    128,
+    floor_base_y + 8 + floor * 32,
+    { walking }
+  )
   
-  cat.update = function()
+  function cat.update()
     cat.update_state()
     cat.x -= 2
     if cat.x < -8 then
@@ -400,13 +431,30 @@ function cat_actor2(x, y)
     end
   end
   
+  function cat.caught()
+    life -= 1
+    if life == 0 then
+      sfx(8)
+      return true
+    end
+    return false
+  end
+  
+  cat.is_cat = true
+
+  function cat.get_floor()
+    return floor
+  end
+  
   return cat
 end
 
-function bigcat_actor(x, y)
+function bigcat_actor(floor)
+  local life = 3
   local cat1 = sprite(2, 2, { 16, 17, 32, 33 })
   local cat2 = sprite(2, 2, { 18, 19, 34, 35 })
   local animation = animation()
+  local floor = floor
   animation.add_frame(cat1, 8)
   animation.add_frame(cat2, 8)
   local walking = state(
@@ -414,9 +462,13 @@ function bigcat_actor(x, y)
   	 animation
   )
 
-  local bigcat = actor(x, y, { walking })
+  local bigcat = actor(
+    128,
+    floor_base_y + floor * 32,
+    { walking }
+  )
 
-  bigcat.update = function()
+  function bigcat.update()
     bigcat.update_state()
     bigcat.x -= 1
     if bigcat.x < -16 then
@@ -424,13 +476,29 @@ function bigcat_actor(x, y)
     end
   end
   
+  function bigcat.caught()
+    life -= 1
+    if life == 0 then
+      return true
+    end
+    return false
+  end
+
+  bigcat.is_cat = true
+
+  function bigcat.get_floor()
+    return floor
+  end
+  
   return bigcat
 end
 
-function bigcat_actor2(x, y)
+function bigcat_actor2(floor)
+  local life = 3
   local cat1 = sprite(2, 2, { 64, 65, 80, 81 })
   local cat2 = sprite(2, 2, { 66, 67, 82, 83 })
   local animation = animation()
+  local floor = floor
   animation.add_frame(cat1, 8)
   animation.add_frame(cat2, 8)
   local walking = state(
@@ -438,9 +506,13 @@ function bigcat_actor2(x, y)
   	 animation
   )
 
-  local bigcat = actor(x, y, { walking })
+  local bigcat = actor(
+    128,
+    floor_base_y + floor * 32,
+    { walking }
+  )
 
-  bigcat.update = function()
+  function bigcat.update()
     bigcat.update_state()
     bigcat.x -= 1
     if bigcat.x < -16 then
@@ -448,9 +520,22 @@ function bigcat_actor2(x, y)
     end
   end
   
+  function bigcat.caught()
+    life -= 1
+    if life == 0 then
+      return true
+    end
+    return false
+  end
+
+  bigcat.is_cat = true
+
+  function bigcat.get_floor()
+    return floor
+  end
+    
   return bigcat
 end
-
 
 -->8
 function elevator_actor(x, y)
