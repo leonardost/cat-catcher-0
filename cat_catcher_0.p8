@@ -76,10 +76,10 @@ function _update()
     girl.y = elevator.get_y()
   end
   
-  if btnp(⬆️) then
+  if btn(⬆️) then
     change_floor(-1)
   end
-  if btnp(⬇️) then
+  if btn(⬇️) then
     change_floor(1)
   end
   --[[
@@ -97,14 +97,22 @@ function _update()
 end
 
 function change_floor(direction)
-  if direction == -1 and current_floor > 0 and not elevator.is_changing_floors() then
+  if direction == -1 
+    and current_floor > 0 
+--    and not elevator.is_changing_floors()
+    and elevator.can_change_to(direction)
+  then
     current_floor -= 1
-    elevator.move_to_floor(current_floor)
+    elevator.change_floor(direction)
     girl.change_floor(direction)
   end
-  if direction == 1 and current_floor < 2 and not elevator.is_changing_floors() then
+  if direction == 1
+    and current_floor < 2
+--    and not elevator.is_changing_floors()
+    and elevator.can_change_to(direction)
+  then
     current_floor += 1
-    elevator.move_to_floor(current_floor)
+    elevator.change_floor(direction)
     girl.change_floor(direction)
   end
 
@@ -407,6 +415,7 @@ function elevator_actor(x, y)
 	 local gap_width = 7
 	 local current_floor = 0
 	 local destination_floor = 0
+	 local direction = 0 -- -1 -> up, 1 -> down
 	 local self = {}
 
   function self.draw()
@@ -449,14 +458,32 @@ function elevator_actor(x, y)
       if gap_width >= 7 then
         gap_width = 7
         state = 0
+        floor = destination_floor
       end
     end
   end
 
-  function self.move_to_floor(floor)
-    if self.is_changing_floors() then return end
+  function self.change_floor(new_direction)
+    if self.is_changing_floors() and direction == new_direction then return end
+
+    direction = new_direction
     state = 1
-    destination_floor = floor
+    destination_floor += new_direction
+    if destination_floor < 0 then
+      destination_floor = 0
+    elseif destination_floor > 2 then
+      destination_floor = 2
+    end
+  end
+  
+  function self.can_change_to(new_direction)
+    if not self.is_changing_floors() then
+      return true
+    end
+    if direction == new_direction then
+      return false
+    end
+    return true
   end
   
   function self.get_y()
@@ -561,6 +588,10 @@ __sfx__
 011000001335010350003000030000300003000030000300003000030000300003000030000300003000030000300003000030000300003000030000300003000030000300003000030000300003000030000300
 0002000035550365503755038550395503b5503c5503e5503f5503f5503f5503f5503f5503f5503e5503d5503c5503a5503855037550355503355025500005000050000500005000050000500005000050000500
 010f00000c550000000c5500c5500c550075500c5500e550000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00020000285502a5502c5502e55030550315503255032550315502e5502c550305502e550295502755025550215501d5500000000000000000000000000000000000000000000000000000000000000000000000
+000200003055032550345503655037550395503a5503a55038550365503755039550395503a550385503655034550315502c55000000000000000000000000000000000000000000000000000000000000000000
+00050000360503c050290502e05037050210502705000000170500000007050000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00020000285502b5502d5502e5502f550305502f5502e5502a5502f5502c550285502455024550005000050000500005000050000500005000050000500005000050000500005000050000500005000050000500
 __music__
 00 04034344
 
