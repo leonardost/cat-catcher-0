@@ -42,14 +42,15 @@ function _init()
   bigcat = bigcat_actor(1)
   bigcat2 = bigcat_actor2(2)
   girl = girl_actor(8, 40 + 32 * current_floor)
+  add(actors, girl)
+
+  elevator = elevator_actor(8, 40 + 32 * current_floor)
+  add(actors, elevator)
+
   add(actors, cat)
   add(actors, cat2)
   add(actors, bigcat)
   add(actors, bigcat2)
-  add(actors, girl)
-  
-  elevator = elevator_actor(8, 40 + 32 * current_floor)
-  add(actors, elevator)
 end
 
 function _update()
@@ -143,6 +144,8 @@ end
 function _draw()
   cls(1)
   map(0, 0, 0, 0, 16, 16)
+  rectfill(girl.x + 1, girl.y + 1, girl.x + 15, girl.y + 15, 0)
+--  girl.draw()
   for gfx in all(actors) do
     if gfx.draw != nil then
       gfx.draw()
@@ -632,14 +635,16 @@ function elevator_actor(x, y)
 	 local self = {}
 
   function self.draw()
-    rect(x, y, x + 15, y + 15, 5)
+    line(x, y, x + 15, y, 5)
+    line(x, y, x, y + 15, 5)
+    line(x + 15, y, x + 15, y + 15, 5)
     if state != 0 then
-      rectfill(x + 1, y + 1, x + 7 - gap_width, y + 14, 6)
-      rectfill(x + 8 + gap_width, y + 1, x + 14, y + 14, 6)
+      rectfill(x + 1, y + 1, x + 7 - gap_width, y + 15, 6)
+      rectfill(x + 8 + gap_width, y + 1, x + 14, y + 15, 6)
 		    local left_gap = x + 7 - gap_width
 		    local right_gap = x + 8 + gap_width
-		    line(left_gap, y + 1, left_gap, y + 14, 13)
-		    line(right_gap, y + 1, right_gap, y + 14, 7)
+		    line(left_gap, y + 1, left_gap, y + 15, 13)
+		    line(right_gap, y + 1, right_gap, y + 15, 7)
 		  end
   end
 
@@ -653,13 +658,8 @@ function elevator_actor(x, y)
         state = 2
       end
     elseif state == 2 then
-      if y < 40 + destination_floor * 32 then
-        y += 4
-      elseif y > 40 + destination_floor * 32 then
-        y -= 4
-      else
-        state = 3
-      end
+      y = 40 + destination_floor * 32
+      state = 3
     elseif state == 3 then
       gap_width += 2
       if gap_width >= 7 then
