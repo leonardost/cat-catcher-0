@@ -27,6 +27,9 @@ function _init()
   actors = {}
   is_catching = false
   catching_t = 0
+  -- delay after a "catch" action
+  -- is done
+  after_catching_t = 0
 
   current_floor = 0
   score = 0
@@ -58,11 +61,16 @@ function _update()
     end
   end
 
+  if after_catching_t > 0 then
+    after_catching_t -= 1
+  end
+
   if is_catching then
     catching_t += 1
     if catching_t == 5 then
       catching_t = 0
       is_catching = false
+      after_catching_t = 5
     end
   end
   if elevator.is_changing_floors() then
@@ -75,11 +83,13 @@ function _update()
   if btn(⬇️) then
     change_floor(1)
   end
-  if btn(🅾️) then
-    if not elevator.is_changing_floors() then
-      catch()
-      is_catching = true
-    end
+  if btn(🅾️)
+    and not elevator.is_changing_floors()
+    and not is_catching
+    and after_catching_t == 0
+  then
+    catch()
+    is_catching = true
  	end
  
   --[[
