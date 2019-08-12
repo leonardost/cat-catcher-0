@@ -55,7 +55,7 @@ function _init()
   -- cat used for testing  
   still_cat = cat_actor(1)
   -- cats are caught between 20 and 28 x
-  still_cat.x = 30
+  still_cat.x = 28
   function still_cat.update() end
   add(actors, still_cat)
 end
@@ -141,7 +141,7 @@ function catch()
       and girl.is_close_enough_to(actor)
       and actor.caught()
     then
-	 	   score += 10
+	 	   score += actor.value
 	 	   caught_cats += 1
 	 	   del(actors, actor)
     end
@@ -448,6 +448,7 @@ function cat_actor(floor)
   cat.is_cat = true
   cat.floor = floor
 	 cat.is_vulnerable = true
+	 cat.value = 10
   
   return cat
 end
@@ -489,6 +490,7 @@ function cat_actor2(floor)
   cat.is_cat = true
   cat.floor = floor
   cat.is_vulnerable = true
+  cat.value = 10
   
   return cat
 end
@@ -553,6 +555,7 @@ function bigcat_actor(floor)
   bigcat.is_cat = true
   bigcat.floor = floor
   bigcat.is_vulnerable = true
+  bigcat.value = 50
   
   return bigcat
 end
@@ -618,6 +621,7 @@ function bigcat_actor2(floor)
   bigcat.is_cat = true
   bigcat.floor = floor
   bigcat.is_vulnerable = true
+  bigcat.value = 50
     
   return bigcat
 end
