@@ -152,7 +152,7 @@ function catch()
 	 	   score += actor.value
 	 	   caught_cats += 1
 	 	   paw = {
-	 	     t = 10,
+	 	     t = 15,
 	 	     x = actor.x,
 	 	     y = actor.y,
 	 	     sprite = small_paw
