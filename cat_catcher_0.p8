@@ -35,32 +35,32 @@ function _init()
   current_floor = 0
   score = 0
   caught_cats = 0
-
   floor_base_y = 40
 
+  girl = girl_actor(8, floor_base_y + 32 * current_floor)
+  add(actors, girl)
+
+  elevator = elevator_actor(8, floor_base_y + 32 * current_floor)
+  add(actors, elevator)
+
+  -- cats used for testing
+  --[[
   cat = cat_actor(0)
   cat2 = cat_actor2(0)
   bigcat = bigcat_actor(1)
   bigcat2 = bigcat_actor2(2)
-  girl = girl_actor(8, 40 + 32 * current_floor)
-  add(actors, girl)
-
-  elevator = elevator_actor(8, 40 + 32 * current_floor)
-  add(actors, elevator)
-
   add(actors, cat)
   add(actors, cat2)
   add(actors, bigcat)
   add(actors, bigcat2)
-
-  -- cat used for testing  
   still_cat = cat_actor(1)
   -- cats are caught between 20 and 28 x
   still_cat.x = 28
   function still_cat.update() end
   add(actors, still_cat)
+  --]]
 
-  small_paw = sprite(1, 1, { 4 })  
+  small_paw = sprite(1, 1, { 4 })
   big_paw = sprite(2, 2, { 104, 105, 120, 121 })
 end
 
@@ -76,7 +76,6 @@ function _update()
   if after_catching_t > 0 then
     after_catching_t -= 1
   end
-  
   if paw.t > 0 then
     paw.t -= 1
   end
@@ -92,7 +91,15 @@ function _update()
   if elevator.is_changing_floors() then
     girl.y = elevator.get_y()
   end
-  
+
+  if t % 600 == 0 then
+    generate_big_cat()
+  elseif t % 300 == 0 then
+    generate_fast_cat()
+  elseif t % 60 == 0 then
+    generate_cat()
+  end
+
   if btn(⬆️) then
     change_floor(-1)
   end
@@ -163,6 +170,30 @@ function catch()
 	 	   del(actors, actor)
     end
   end
+end
+
+function generate_cat()
+  local floor = flr(rnd(3))
+  local new_cat = cat_actor(floor)
+  add(actors, new_cat)
+end
+
+function generate_fast_cat()
+  local floor = flr(rnd(3))
+  local new_cat = cat_actor2(floor)
+  add(actors, new_cat)
+end
+
+function generate_big_cat()
+  local floor = flr(rnd(3))
+  local breed = flr(rnd(2))
+  local new_cat
+  if breed == 0 then
+    new_cat = bigcat_actor(floor)
+  else
+    new_cat = bigcat_actor2(floor)
+  end
+  add(actors, new_cat)
 end
 
 function _draw()
