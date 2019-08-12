@@ -51,6 +51,13 @@ function _init()
   add(actors, cat2)
   add(actors, bigcat)
   add(actors, bigcat2)
+
+  -- cat used for testing  
+  still_cat = cat_actor(1)
+  -- cats are caught between 20 and 28 x
+  still_cat.x = 30
+  function still_cat.update() end
+  add(actors, still_cat)
 end
 
 function _update()
@@ -337,8 +344,8 @@ function girl_actor(x, y)
 
   function girl.is_close_enough_to(cat)
     if 
-      girl.x + w >= cat.x - 4
-      and girl.x + w < cat.x + 8
+      girl.x + w - 4 <= cat.x
+      and girl.x + w + 4 >= cat.x
       and floor == cat.floor
       and cat.is_vulnerable
     then
