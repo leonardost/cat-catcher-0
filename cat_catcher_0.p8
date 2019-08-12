@@ -34,6 +34,7 @@ function _init()
 
   current_floor = 0
   score = 0
+  stage = 1
   caught_cats = 0
   floor_base_y = 40
 
@@ -211,8 +212,10 @@ function _draw()
   if paw.t > 0 then
     paw.sprite.draw(paw.x, paw.y)
   end
+  
   print("score: " .. score, 0, 0, 7)
-  print("caught: " .. caught_cats, 50, 0, 7)
+  print("caught: " .. caught_cats, 48, 0, 7)
+  print("stage " .. stage, 100, 0, 7)
 end
 
 -->8
