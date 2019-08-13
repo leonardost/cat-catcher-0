@@ -44,6 +44,43 @@ function _init()
   elevator = elevator_actor(8, floor_base_y + 32 * current_floor)
   add(actors, elevator)
 
+  --[[
+    cats
+    0 = small black
+    1 = small brown
+    2 = big black
+    3 = big brown
+				format:
+				{ cat_code, ticker, floor }
+				if floor == -1 then the floor
+				on which the cat will appear is
+				randomized
+  --]]
+  cat_generation = {}
+  -- stage 1 cats
+  cat_generation[1] = {
+    { 0, 30, 0 },
+    { 0, 90, 1 },
+    { 0, 150, 2 },
+    { 0, 210, 0 },
+    { 0, 270, 1 },
+    { 0, 330, 2 },
+    { 0, 360, 1 },
+    { 1, 430, 0 },
+    { 1, 480, 0 },
+    { 1, 500, 1 },
+    { 1, 520, 2 },
+    { 2, 540, 0 },
+    { 1, 580, 1 },
+    { 3, 700, 1 },
+    { 2, 860, 2 },
+    { 0, 1020, 0 },
+    { 0, 1050, 2 },
+    { 0, 1080, 1 },
+--    { 1, 820, 2 },
+  }
+  
+
   -- cats used for testing
   --[[
   cat = cat_actor(0)
@@ -93,6 +130,12 @@ function _update()
     girl.y = elevator.get_y()
   end
 
+  for c in all(cat_generation[stage]) do
+    if c[2] == t then
+      generate_cats(c)
+    end
+  end
+  --[[
   if t % 600 == 0 then
     generate_big_cat()
   elseif t % 300 == 0 then
@@ -100,6 +143,7 @@ function _update()
   elseif t % 60 == 0 then
     generate_cat()
   end
+  --]]
 
   if btn(⬆️) then
     change_floor(-1)
@@ -128,6 +172,25 @@ function _update()
     girl.idle()
   end
   --]]
+end
+
+function generate_cats(c)
+  local floor
+  if c[3] != -1 then
+    floor = c[3]
+  else
+    floor = flr(rnd(3))
+  end
+
+  if c[1] == 0 then
+    generate_cat(floor)
+  elseif c[1] == 1 then
+    generate_fast_cat(floor)
+  elseif c[1] == 2 then
+    generate_big_cat(floor, 0)
+  elseif c[1] == 3 then
+    generate_big_cat(floor, 1)
+  end
 end
 
 function change_floor(direction)
@@ -173,21 +236,17 @@ function catch()
   end
 end
 
-function generate_cat()
-  local floor = flr(rnd(3))
+function generate_cat(floor)
   local new_cat = cat_actor(floor)
   add(actors, new_cat)
 end
 
-function generate_fast_cat()
-  local floor = flr(rnd(3))
+function generate_fast_cat(floor)
   local new_cat = cat_actor2(floor)
   add(actors, new_cat)
 end
 
-function generate_big_cat()
-  local floor = flr(rnd(3))
-  local breed = flr(rnd(2))
+function generate_big_cat(floor, breed)
   local new_cat
   if breed == 0 then
     new_cat = bigcat_actor(floor)
