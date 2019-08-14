@@ -30,6 +30,7 @@ function _init()
   -- delay after a "catch" action
   -- is done
   after_catching_t = 0
+  stage_cleared_t = 0
   paw = { t = 0 }
 
   current_floor = 0
@@ -37,6 +38,16 @@ function _init()
   stage = 1
   caught_cats = 0
   floor_base_y = 40
+
+  --[[
+  game states:
+  0 = title screen
+  1 = stage introduction
+  2 = game
+  3 = stage clear
+  4 = ending
+  --]]
+  game_state = 0
 
   girl = girl_actor(8, floor_base_y + 32 * current_floor)
   add(actors, girl)
@@ -79,7 +90,6 @@ function _init()
     { 0, 1080, 1 },
 --    { 1, 820, 2 },
   }
-  
 
   -- cats used for testing
   --[[
@@ -105,9 +115,40 @@ end
 function _update()
   t += 1
 
+  if game_state == 0 then
+    if btnp(❎) then
+      game_state = 1
+      stage = 1
+      t = 0
+    end
+    return
+  elseif game_state == 1 then
+  	 if t == 60 then
+  	   game_state = 2
+  	   t = 0
+  	 end
+	   return
+  elseif game_state == 3 then
+  	 if t == 60 then
+  	   game_state = 1
+  	   stage = 1
+  	   t = 0
+  	 end
+  	 return
+  end
+
   for obj in all(actors) do
     if obj.update != nil then
       obj.update()
+    end
+  end
+
+  if stage_cleared_t > 0 then
+    stage_cleared_t -= 1
+    if stage_cleared_t == 0 then
+      game_state = 3
+      t = 0
+      return
     end
   end
 
@@ -116,6 +157,9 @@ function _update()
   end
   if paw.t > 0 then
     paw.t -= 1
+    if paw.t == 0 and caught_cats == 18 then
+      stage_cleared_t = 45
+    end
   end
 
   if is_catching then
@@ -135,15 +179,6 @@ function _update()
       generate_cats(c)
     end
   end
-  --[[
-  if t % 600 == 0 then
-    generate_big_cat()
-  elseif t % 300 == 0 then
-    generate_fast_cat()
-  elseif t % 60 == 0 then
-    generate_cat()
-  end
-  --]]
 
   if btn(⬆️) then
     change_floor(-1)
@@ -258,23 +293,36 @@ end
 
 function _draw()
   cls(1)
-  map(0, 0, 0, 0, 16, 16)
-  rectfill(girl.x + 1, girl.y + 1, girl.x + 15, girl.y + 15, 0)
-  for gfx in all(actors) do
-    if gfx.draw != nil then
-      gfx.draw()
-    end
-  end
-  if is_catching then
-    spr(52, girl.x + 16, girl.y + 8)
-  end
-  if paw.t > 0 then
-    paw.sprite.draw(paw.x, paw.y)
-  end
   
-  print("score: " .. score, 0, 0, 7)
-  print("caught: " .. caught_cats, 48, 0, 7)
-  print("stage " .. stage, 100, 0, 7)
+  if game_state == 0 then
+			 print("cat catcher 0", 64 - 26, 61)
+			 print("press ❎ to start", 32, 90)
+			 print("lst 2019", 64 - 16, 120)
+  elseif game_state == 1 then
+    print("stage " .. stage, 64 - 14, 61)
+  elseif game_state == 3 then
+    print("stage clear!", 40, 61)
+  elseif game_state == 2 then
+  
+		  map(0, 0, 0, 0, 16, 16)
+		  rectfill(girl.x + 1, girl.y + 1, girl.x + 15, girl.y + 15, 0)
+		  for gfx in all(actors) do
+		    if gfx.draw != nil then
+		      gfx.draw()
+		    end
+		  end
+		  if is_catching then
+		    spr(52, girl.x + 16, girl.y + 8)
+		  end
+		  if paw.t > 0 then
+		    paw.sprite.draw(paw.x, paw.y)
+		  end
+		  
+		  print("score: " .. score, 0, 0, 7)
+		  print("caught: " .. caught_cats, 48, 0, 7)
+		  print("stage " .. stage, 100, 0, 7)
+		  
+		end
 end
 
 -->8
