@@ -47,7 +47,7 @@ function _init()
   3 = stage clear
   4 = ending
   --]]
-  game_state = 0
+  game_state = 2
 
   girl = girl_actor(8, floor_base_y + 32 * current_floor)
   add(actors, girl)
@@ -62,7 +62,7 @@ function _init()
     2 = big black
     3 = big brown
 				format:
-				{ cat_code, ticker, floor }
+				{ cat_code, tick, floor }
 				if floor == -1 then the floor
 				on which the cat will appear is
 				randomized
@@ -88,7 +88,27 @@ function _init()
     { 0, 1020, 0 },
     { 0, 1050, 2 },
     { 0, 1080, 1 },
---    { 1, 820, 2 },
+  }
+  cat_generation[2] = {
+    { 0, 30, 0 },
+    { 0, 90, 2 },
+    { 0, 150, 1 },
+    { 0, 210, 1 },   
+--    { 0, 210, 0 },
+--    { 0, 270, 1 },
+--    { 0, 330, 2 },
+--    { 0, 360, 1 },
+--    { 1, 430, 0 },
+--    { 1, 480, 0 },
+--    { 1, 500, 1 },
+--    { 1, 520, 2 },
+--    { 2, 540, 0 },
+--    { 1, 580, 1 },
+--    { 3, 700, 1 },
+--    { 2, 860, 2 },
+--    { 0, 1020, 0 },
+--    { 0, 1050, 2 },
+--    { 0, 1080, 1 },
   }
 
   -- cats used for testing
@@ -123,16 +143,19 @@ function _update()
     end
     return
   elseif game_state == 1 then
+    -- stage introduction
   	 if t == 60 then
   	   game_state = 2
   	   t = 0
   	 end
 	   return
   elseif game_state == 3 then
+    -- stage clear
   	 if t == 60 then
   	   game_state = 1
-  	   stage = 1
   	   t = 0
+  	   caught_cats = 0
+      stage += 1
   	 end
   	 return
   end
@@ -303,8 +326,23 @@ function _draw()
   elseif game_state == 3 then
     print("stage clear!", 40, 61)
   elseif game_state == 2 then
-  
-		  map(0, 0, 0, 0, 16, 16)
+
+    if stage == 2 then
+      cls(2)
+    end
+		  map((stage - 1) * 16, 0, 0, 0, 16, 16)
+		  if stage == 2 then
+		    -- vine 1
+		    line(95, 88, 63, 120, 3)
+		    line(96, 88, 64, 120, 11)
+		    line(97, 88, 65, 120, 3)
+
+      -- vine 2		    
+		    line(71, 88, 39, 56, 3)
+		    line(72, 88, 40, 56, 11)
+		    line(73, 88, 41, 56, 3)
+		  end
+		  
 		  rectfill(girl.x + 1, girl.y + 1, girl.x + 15, girl.y + 15, 0)
 		  for gfx in all(actors) do
 		    if gfx.draw != nil then
@@ -323,76 +361,6 @@ function _draw()
 		  print("stage " .. stage, 100, 0, 7)
 		  
 		end
-end
-
--->8
-function sprite(w, h, sprites, transparent_color)
-  local w = w
-  local h = h
-  local sprites = sprites
-  local self = {}
-  local transparent_color = transparent_color
-
-  function self.draw(x, y)
-	   if transparent_color != nil then
-      palt(transparent_color, true)
-      palt(0, false)
-    end
-    for i = 0, h - 1 do
-	     for j = 0, w - 1 do
-	       spr(
-  	       sprites[i * w + j + 1],
-  	       x + j * 8,
-  	       y + i * 8
-  	     )
-  	   end
-  	 end
-    palt()
-  end
-
-  return self
-end
-
--->8
-function animation()
-  local sprites = {}
-  local durations = {}
-  local number_of_sprites = 0
-  local current_frame = 1
-  local ticks = 0
-  local finished_callback = nil
-
-  local self = {}
-  function self.add_frame(sprite, duration)
-    add(sprites, sprite)
-    add(durations, duration)
-    number_of_sprites += 1
-  end
-  function self.set_finished_callback(callback)
-    finished_callback = callback
-  end
-  function self.start()
-    ticks = 0
-    current_frame = 1
-  end
-  function self.update()
-    ticks += 1
-    if ticks >= durations[current_frame] then
-      current_frame += 1
-      if current_frame > number_of_sprites then
-        current_frame = 1
-        if finished_callback != nil then
-          finished_callback()
-        end
-      end
-      ticks = 0
-    end
-  end
-	 function self.draw(x, y)
-	   sprites[current_frame].draw(x, y)
-	 end
-
-  return self
 end
 
 -->8
@@ -520,6 +488,96 @@ function girl_actor(x, y)
 end
 
 -->8
+function sprite(w, h, sprites, transparent_color)
+  local w = w
+  local h = h
+  local sprites = sprites
+  local self = {}
+  local transparent_color = transparent_color
+
+  function self.draw(x, y)
+	   if transparent_color != nil then
+      palt(transparent_color, true)
+      palt(0, false)
+    end
+    for i = 0, h - 1 do
+	     for j = 0, w - 1 do
+	       spr(
+  	       sprites[i * w + j + 1],
+  	       x + j * 8,
+  	       y + i * 8
+  	     )
+  	   end
+  	 end
+    palt()
+  end
+
+  return self
+end
+
+function animation()
+  local sprites = {}
+  local durations = {}
+  local number_of_sprites = 0
+  local current_frame = 1
+  local ticks = 0
+  local finished_callback = nil
+
+  local self = {}
+  function self.add_frame(sprite, duration)
+    add(sprites, sprite)
+    add(durations, duration)
+    number_of_sprites += 1
+  end
+  function self.set_finished_callback(callback)
+    finished_callback = callback
+  end
+  function self.start()
+    ticks = 0
+    current_frame = 1
+  end
+  function self.update()
+    ticks += 1
+    if ticks >= durations[current_frame] then
+      current_frame += 1
+      if current_frame > number_of_sprites then
+        current_frame = 1
+        if finished_callback != nil then
+          finished_callback()
+        end
+      end
+      ticks = 0
+    end
+  end
+	 function self.draw(x, y)
+	   sprites[current_frame].draw(x, y)
+	 end
+
+  return self
+end
+
+function state(name, animation)
+  local self = {
+    name = name,
+    animation = animation
+  }
+
+  function self.set_finished_callback(callback)
+    animation.set_finished_callback(callback)
+  end
+  function self.start()
+    animation.start()
+  end
+  function self.update()
+    animation.update()
+  end
+  function self.draw(x, y)
+    animation.draw(x, y)
+  end
+
+  return self
+end
+
 function actor(x, y, states)
   local states = states
   local self = {
@@ -548,33 +606,10 @@ function actor(x, y, states)
 end
 
 -->8
-function state(name, animation)
-  local self = {
-    name = name,
-    animation = animation
-  }
-
-  function self.set_finished_callback(callback)
-    animation.set_finished_callback(callback)
-  end
-  function self.start()
-    animation.start()
-  end
-  function self.update()
-    animation.update()
-  end
-  function self.draw(x, y)
-    animation.draw(x, y)
-  end
-
-  return self
-end
-
--->8
-function cat_actor(floor)
+function base_cat_actor(sprites, floor)
   local life = 1
-  local cat1 = sprite(1, 1, { 1 })
-  local cat2 = sprite(1, 1, { 2 })
+  local cat1 = sprites[1]
+  local cat2 = sprites[2]
   local animation = animation()
   animation.add_frame(cat1, 8)
   animation.add_frame(cat2, 8)
@@ -588,14 +623,6 @@ function cat_actor(floor)
     { walking }
   )
   
-  function cat.update()
-    cat.update_state()
-    cat.x -= 1
-    if cat.x < -8 then
-      cat.x = 128
-    end
-  end
-
   function cat.caught()
     life -= 1
     if life == 0 then
@@ -613,23 +640,31 @@ function cat_actor(floor)
   return cat
 end
 
+function cat_actor(floor)
+  local sprites = {
+    sprite(1, 1, { 1 }),
+    sprite(1, 1, { 2 }),
+  }
+  local cat = base_cat_actor(sprites, floor)
+
+  function cat.update()
+    cat.update_state()
+    cat.x -= 1
+    if cat.x < -8 then
+      cat.x = 128
+    end
+  end
+
+  return cat
+end
+
 function cat_actor2(floor)
-  local life = 1
-  local cat1 = sprite(1, 1, { 10 })
-  local cat2 = sprite(1, 1, { 11 })
-  local animation = animation()
-  animation.add_frame(cat1, 8)
-  animation.add_frame(cat2, 8)
-  local walking = state(
-  	 "walking",
-  	 animation
-  )
-  local cat = actor(
-    128,
-    floor_base_y + 8 + floor * 32,
-    { walking }
-  )
-  
+  local sprites = {
+    sprite(1, 1, { 10 }),
+    sprite(1, 1, { 11 }),
+  }
+  local cat = base_cat_actor(sprites, floor)
+
   function cat.update()
     cat.update_state()
     cat.x -= 2
@@ -637,28 +672,16 @@ function cat_actor2(floor)
       cat.x = 128
     end
   end
-  
-  function cat.caught()
-    life -= 1
-    if life == 0 then
-      sfx(8)
-      return true
-    end
-    return false
-  end
-  
-  cat.is_cat = true
-  cat.floor = floor
-  cat.is_vulnerable = true
-  cat.value = 10
-  
+
+  cat.value = 30
+
   return cat
 end
 
-function bigcat_actor(floor)
+function base_bigcat_actor(sprites, floor)
   local life = 3
-  local cat1 = sprite(2, 2, { 16, 17, 32, 33 })
-  local cat2 = sprite(2, 2, { 18, 19, 34, 35 })
+  local cat1 = sprites[1]
+  local cat2 = sprites[2]
   local animation_walk = animation()
   animation_walk.add_frame(cat1, 8)
   animation_walk.add_frame(cat2, 8)
@@ -667,7 +690,7 @@ function bigcat_actor(floor)
   	 animation_walk
   )
 
-  local stun1 = sprite(2, 2, { 98, 99, 114, 115 })
+  local stun1 = sprites[3]
   local animation_stunned = animation()
   animation_stunned.add_frame(stun1, 30)
   local stunned = state(
@@ -720,69 +743,25 @@ function bigcat_actor(floor)
   return bigcat
 end
 
+function bigcat_actor(floor)
+  local sprites = {
+    -- walking
+    sprite(2, 2, { 16, 17, 32, 33 }),
+    sprite(2, 2, { 18, 19, 34, 35 }),
+    -- stunned
+    sprite(2, 2, { 98, 99, 114, 115 }),
+  }
+  local bigcat = base_bigcat_actor(sprites, floor)
+  return bigcat
+end
+
 function bigcat_actor2(floor)
-  local life = 3
-  
-  local cat1 = sprite(2, 2, { 64, 65, 80, 81 })
-  local cat2 = sprite(2, 2, { 66, 67, 82, 83 })
-  local animation_walk = animation()
-  animation_walk.add_frame(cat1, 8)
-  animation_walk.add_frame(cat2, 8)
-  local walking = state(
-  	 "walking",
-  	 animation_walk
-  )
-  
-  local stun1 = sprite(2, 2, { 100, 101, 116, 117 })
-  local animation_stunned = animation()
-  animation_stunned.add_frame(stun1, 30)
-  local stunned = state(
-    "stunned",
-    animation_stunned
-  )
-
-  local bigcat = actor(
-    128,
-    floor_base_y + floor * 32,
-    { walking, stunned }
-  )
-
-  stunned.set_finished_callback(function()
-    bigcat.change_to_state(1)
-    bigcat.is_vulnerable = true
-  end)
-
-  function bigcat.update()
-    bigcat.update_state()
-    
-    if bigcat.current_state == 1 then
-		    bigcat.x -= 1
-		    if bigcat.x < -16 then
-		      bigcat.x = 128
-		    end
-		  elseif bigcat.current_state == 2 then
-		    -- stunned
-		    bigcat.x += 1
-      -- todo: implement bumps with gravity
-    end
-  end
-  
-  function bigcat.caught()
-    life -= 1
-    bigcat.change_to_state(2)
-    bigcat.is_vulnerable = false
-    if life == 0 then
-      sfx(8)
-      return true
-    end
-    return false
-  end
-
-  bigcat.is_cat = true
-  bigcat.floor = floor
-  bigcat.is_vulnerable = true
-  bigcat.value = 50
-    
+  local sprites = {
+    sprite(2, 2, { 64, 65, 80, 81 }),
+    sprite(2, 2, { 66, 67, 82, 83 }),
+    sprite(2, 2, { 100, 101, 116, 117 }),
+  }
+  local bigcat = base_bigcat_actor(sprites, floor)
   return bigcat
 end
 
@@ -926,11 +905,11 @@ a1a00001a1a00001999000099990000900676767bbb0000bbbb0000b000000000000000000000000
 77000077074000740000007704470077110000110d1000d1000000dd011d00ddefeffffffffffefe05555500000000000b0044000bbbbb000000000000000000
 5555555000000005500000050000000070000007000000005555555555555555000000000000000033333333333333330000ff000000000000000000b0000000
 5600006500000005550000550000665544000044000077445666666d7666666500000055555550003b33b3bbb33bb3bb0000440000000000000008000b000000
-5060060500000005555005550000655544400444000074445666666d766666650000055775775500bbbbbbbbbbbbbbbb00004400000000000000b00000b00003
-5006700500000005555555550000005544444444000000445666666d766666650055557775777500bbbbbbbbbb3bb9ab0000ff0000000300000b0000000b00b0
+5060060500000005555005550000655544400444000074445666666d766666650000055775775500bbbbbb4bbbbbbbbb00004400000000000000b00000b00003
+5006700500000005555555550000005544444444000000445666666d7666666500555577757775004bbbbbbbbb3bb9ab0000ff0000000300000b0000000b00b0
 5006600500000005555555550000005544444444000000445666666d766666650557757775777500bbbb3bbbbbb3b3bb000044000300b000000b0300000b0b00
 50600605000000055a5555a5500000554a4444a4400000445666666d766666650577755775775550b3bbbbbbbbab3bbb0000440000b0b0000003b030bb03b000
-560000650000000555a55a555555555544a44a44447474445666666d766666650577755555555755bbbbbbbbbbbb3bbb0000ff00000b00000030b00000bbb3bb
+560000650000000555a55a555555555544a44a44447474445666666d766666650577755555555755bbbbb3bbbbbb3bbb0000ff00000b00000030b00000bbb3bb
 0555555500000005555e55555555555544494444444747445666666d766666650557555777557775bbbbbb3bbbb3bbbb00004400000b00000000b00000033000
 5000000055555550655555666555555574444477744444445666666d7666666500005577777557750000000000000000000000b3000000000000000000000000
 5000000056000065555555555555555544444444444444445666666d766666650005577777775555000000000000000000000b33000000000000000000000000
@@ -1084,8 +1063,8 @@ __map__
 007677004b00004a00494958594b4949007677006e6d000000006c00006c6e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 060606060606060606060606060606066a6a6a6a6a6b6a6a6a6a6a6b6a6a6a6a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-006667004d4e00004f0000000000004c006667000000005c0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0076770000004b000048005859004b00007677000000006c00006d00006f006e000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+006667004d4e00004f0000000000004c0066670000005c000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0076770000004b000048005859004b000076770000006c0000006d00006f006e000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 060606060606060606060606060606066b6a6a6a6a6a6a6a6b6a6a6a6a6b6a6a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __sfx__
 00010000000002d0502f050310503105033050340503505036050370503705037050380503805038050370503505033050300502d0502a0502705024050210501e0501b050180501605014050120501105010050
