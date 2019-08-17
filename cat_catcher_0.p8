@@ -21,7 +21,7 @@ __lua__
 --]]
 
 function _init()
-  t = 149
+  t = 220
   -- actors can have .draw()
   -- and/or .update() methods
   actors = {}
@@ -93,7 +93,8 @@ function _init()
     { 0, 30, 0 },
     { 0, 90, 2 },
     { 4, 150, 1 },
-    { 4, 210, 1 },   
+    { 4, 210, 1 },
+    { 6, 260, 1 },
 --    { 0, 210, 0 },
 --    { 0, 270, 1 },
 --    { 0, 330, 2 },
@@ -240,6 +241,9 @@ function generate_cats(c)
     floor = flr(rnd(3))
   end
 
+  local new_cat = cat_map[c[1]](floor)
+  add(actors, new_cat)
+--[[  
   if c[1] == 0 then
     generate_cat(floor)
   elseif c[1] == 1 then
@@ -251,6 +255,7 @@ function generate_cats(c)
   elseif c[1] == 4 then
 	   generate_jungle_cat(floor)
   end
+  --]]
 end
 
 function change_floor(direction)
@@ -294,31 +299,6 @@ function catch()
 	 	   del(actors, actor)
     end
   end
-end
-
-function generate_cat(floor)
-  local new_cat = cat_actor(floor)
-  add(actors, new_cat)
-end
-
-function generate_fast_cat(floor)
-  local new_cat = cat_actor2(floor)
-  add(actors, new_cat)
-end
-
-function generate_big_cat(floor, breed)
-  local new_cat
-  if breed == 0 then
-    new_cat = bigcat_actor(floor)
-  else
-    new_cat = bigcat_actor2(floor)
-  end
-  add(actors, new_cat)
-end
-
-function generate_jungle_cat(floor)
-  local new_cat = cat_actor3(floor)
-  add(actors, new_cat)
 end
 
 function _draw()
@@ -644,6 +624,10 @@ function base_cat_actor(sprites, floor)
 	 cat.is_vulnerable = true
 	 cat.value = 10
 	 cat.update_functions = {}
+
+  function cat.base_update()
+    for f in all(cat.update_functions) do f() end  
+  end
   
   return cat
 end
@@ -657,12 +641,10 @@ function cat_actor(floor)
 
   function cat.update()
     cat.update_state()
+    cat.base_update()
     cat.x -= 1
     if cat.x < -8 then
       cat.x = 128
-    end
-    for f in all(cat.update_functions) do
-      f()
     end
   end
 
@@ -678,6 +660,7 @@ function cat_actor2(floor)
 
   function cat.update()
     cat.update_state()
+			 cat.base_update()
     cat.x -= 2
     if cat.x < -8 then
       cat.x = 128
@@ -690,16 +673,16 @@ function cat_actor2(floor)
 end
 
 -- adds climbing behavior to a cat
-function climber(cat)
+function climber(cat, climb_velocity)
 	 add(cat.update_functions, function()
     if cat.is_going_down then
-      cat.y += 1
+      cat.y += climb_velocity
       if cat.y == 112 then
         cat.is_going_down = false
       end
     end
     if cat.is_going_up then
-      cat.y -= 1
+      cat.y -= climb_velocity
       if cat.y == 48 then
         cat.is_going_up = false
       end
@@ -721,49 +704,35 @@ end
 -- cat that goes up and down
 -- the vines in stage 2
 function cat_actor3(floor)
-  local cat = cat_actor(floor)
-  return climber(cat)
---[[
+  return climber(cat_actor(floor), 1)
+end
+
+function cat_actor4(floor)
+  return climber(cat_actor2(floor), 2)
+end
+
+-- tiger climber cat
+function cat_actor5(floor)
   local sprites = {
-    sprite(1, 1, { 1 }),
-    sprite(1, 1, { 2 }),
+    sprite(1, 1, { 50 }),
+    sprite(1, 1, { 51 }),
   }
   local cat = base_cat_actor(sprites, floor)
 
   function cat.update()
     cat.update_state()
-    cat.x -= 1
-    
-    if cat.is_going_down then
-      cat.y += 1
-      if cat.y == 112 then
-        cat.is_going_down = false
-      end
-    end
-    if cat.is_going_up then
-      cat.y -= 1
-      if cat.y == 48 then
-        cat.is_going_up = false
-      end
-    end
-    if cat.floor == 1 then
-      if cat.x == 94 and flr(rnd(10)) > 5 then
-        cat.is_going_down = true
-        cat.floor = 2
-      end
-      if cat.x == 70 and flr(rnd(10)) > 5 then
-        cat.is_going_up = true
-        cat.floor = 0
-      end
-    end
+			 cat.base_update()
+    cat.x -= 2
     if cat.x < -8 then
       cat.x = 128
     end
   end
 
-  return cat
-  --]]
+  cat.value = 30
+
+  return climber(cat, 2)
 end
+
 
 function base_bigcat_actor(sprites, floor)
   local life = 3
@@ -852,6 +821,22 @@ function bigcat_actor2(floor)
   return bigcat
 end
 
+cat_map = {
+  -- 0 - normal cat
+  [0] = cat_actor,
+  -- 1 - fast cat
+  cat_actor2,
+  -- 2 - big black cat
+  bigcat_actor,
+  -- 3 - big brown cat
+  bigcat_actor2,
+  -- 4 - climber normal cat
+  cat_actor3,
+  -- 5 - climber fast cat
+  cat_actor4,
+  -- 6 - climber tiger cat
+  cat_actor5,
+}
 -->8
 function elevator_actor(x, y)
 	 local x = x
