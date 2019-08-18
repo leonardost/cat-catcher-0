@@ -21,7 +21,7 @@ __lua__
 --]]
 
 function _init()
-  t = 220
+  t = 0
   -- actors can have .draw()
   -- and/or .update() methods
   actors = {}
@@ -94,22 +94,21 @@ function _init()
     { 0, 90, 2 },
     { 4, 150, 1 },
     { 4, 210, 1 },
-    { 6, 260, 1 },
---    { 0, 210, 0 },
---    { 0, 270, 1 },
---    { 0, 330, 2 },
---    { 0, 360, 1 },
---    { 1, 430, 0 },
---    { 1, 480, 0 },
---    { 1, 500, 1 },
---    { 1, 520, 2 },
---    { 2, 540, 0 },
---    { 1, 580, 1 },
---    { 3, 700, 1 },
---    { 2, 860, 2 },
---    { 0, 1020, 0 },
---    { 0, 1050, 2 },
---    { 0, 1080, 1 },
+    { 6, 310, 1 },
+    { 6, 340, 0 },
+    { 6, 370, 2 },
+    { 7, 400, 1 },
+    { 8, 550, 1 },
+    { 7, 700, 1 },
+    { 0, 840, 2 },
+    { 6, 900, 2 },
+    { 0, 920, 1 },
+    { 6, 930, 0 },
+    { 6, 960, 2 },
+    { 0, 960, 1 },
+    { 8, 980, 1 },
+    { 6, 990, 0 },
+    { 6, 1180, 1 },
   }
 
   -- cats used for testing
@@ -181,7 +180,10 @@ function _update()
   end
   if paw.t > 0 then
     paw.t -= 1
-    if paw.t == 0 and caught_cats == 18 then
+    if paw.t == 0 and caught_cats == 18 and stage == 1 then
+      stage_cleared_t = 45
+    end
+    if paw.t == 0 and caught_cats == 19 and stage == 2 then
       stage_cleared_t = 45
     end
   end
@@ -243,19 +245,6 @@ function generate_cats(c)
 
   local new_cat = cat_map[c[1]](floor)
   add(actors, new_cat)
---[[  
-  if c[1] == 0 then
-    generate_cat(floor)
-  elseif c[1] == 1 then
-    generate_fast_cat(floor)
-  elseif c[1] == 2 then
-    generate_big_cat(floor, 0)
-  elseif c[1] == 3 then
-    generate_big_cat(floor, 1)
-  elseif c[1] == 4 then
-	   generate_jungle_cat(floor)
-  end
-  --]]
 end
 
 function change_floor(direction)
@@ -570,6 +559,8 @@ function actor(x, y, states)
   local self = {
     x = x,
     y = y,
+    h = 8,
+    w = 8,
     current_state = 1
   }
 
@@ -677,13 +668,13 @@ function climber(cat, climb_velocity)
 	 add(cat.update_functions, function()
     if cat.is_going_down then
       cat.y += climb_velocity
-      if cat.y == 112 then
+      if cat.y == 120 - cat.h then
         cat.is_going_down = false
       end
     end
     if cat.is_going_up then
       cat.y -= climb_velocity
-      if cat.y == 48 then
+      if cat.y == 56 - cat.h then
         cat.is_going_up = false
       end
     end
@@ -733,7 +724,6 @@ function cat_actor5(floor)
   return climber(cat, 2)
 end
 
-
 function base_bigcat_actor(sprites, floor)
   local life = 3
   local cat1 = sprites[1]
@@ -767,6 +757,7 @@ function base_bigcat_actor(sprites, floor)
 
   function bigcat.update()
     bigcat.update_state()
+    bigcat.base_update()
 
     if bigcat.current_state == 1 then
 		    bigcat.x -= 1
@@ -791,10 +782,18 @@ function base_bigcat_actor(sprites, floor)
     return false
   end
 
+	 bigcat.update_functions = {}
+
+  function bigcat.base_update()
+    for f in all(bigcat.update_functions) do f() end
+  end
+
   bigcat.is_cat = true
   bigcat.floor = floor
   bigcat.is_vulnerable = true
   bigcat.value = 50
+  bigcat.w = 16
+  bigcat.h = 16
   
   return bigcat
 end
@@ -821,6 +820,15 @@ function bigcat_actor2(floor)
   return bigcat
 end
 
+-- climber bigcat
+function bigcat_actor3(floor)
+  return climber(bigcat_actor(floor), 1)
+end
+
+function bigcat_actor4(floor)
+  return climber(bigcat_actor2(floor), 1)
+end
+
 cat_map = {
   -- 0 - normal cat
   [0] = cat_actor,
@@ -836,6 +844,10 @@ cat_map = {
   cat_actor4,
   -- 6 - climber tiger cat
   cat_actor5,
+  -- 7 - climber big cat
+  bigcat_actor3,
+  -- 8 - climber brown bigcat
+  bigcat_actor4,
 }
 -->8
 function elevator_actor(x, y)
