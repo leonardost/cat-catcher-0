@@ -35,8 +35,11 @@ function _init()
 
   current_floor = 0
   score = 0
+  high_score = 0
   stage = 1
   caught_cats = 0
+  escaped_cats = 0
+  tries = 3
   floor_base_y = 40
 
   --[[
@@ -46,6 +49,7 @@ function _init()
   2 = game
   3 = stage clear
   4 = ending
+  5 = game over
   --]]
   game_state = 2
 
@@ -139,6 +143,7 @@ function _update()
     if btnp(❎) then
       game_state = 1
       stage = 1
+      tries = 3
       t = 0
     end
     return
@@ -146,6 +151,11 @@ function _update()
     -- stage introduction
   	 if t == 60 then
   	   game_state = 2
+  	   escaped_cats = 0
+  	   caught_cats = 0
+  	   actors = {}
+  	   add(actors, girl)
+  	   add(actors, elevator)
   	   t = 0
   	 end
 	   return
@@ -154,15 +164,33 @@ function _update()
   	 if t == 60 then
   	   game_state = 1
   	   t = 0
-  	   caught_cats = 0
       stage += 1
   	 end
   	 return
+  elseif game_state == 5 then
+    -- game over
+    if btnp(❎) then
+      game_state = 0
+      t = 0
+    end
+    return
   end
 
   for obj in all(actors) do
     if obj.update != nil then
       obj.update()
+    end
+    if obj.escaped == true then
+      escaped_cats += 1
+      if escaped_cats == 3 then
+        game_state = 1
+        t = 0
+        tries -= 1
+        if tries == 0 then
+          game_state = 5
+        end
+      end
+      del(actors, obj)
     end
   end
 
@@ -180,7 +208,10 @@ function _update()
   end
   if paw.t > 0 then
     paw.t -= 1
-    if paw.t == 0 and caught_cats == #cat_generation[stage] then
+    if
+      paw.t == 0
+      and caught_cats + escaped_cats == #cat_generation[stage]
+    then
       stage_cleared_t = 45
     end
   end
@@ -297,8 +328,11 @@ function _draw()
 			 print("lst 2019", 64 - 16, 120)
   elseif game_state == 1 then
     print("stage " .. stage, 64 - 14, 61)
+    print("tries x " .. tries, 46, 80)
   elseif game_state == 3 then
     print("stage clear!", 40, 61)
+  elseif game_state == 5 then
+    print("game over", 46, 61)
   elseif game_state == 2 then
 
     if stage == 2 then
@@ -331,8 +365,7 @@ function _draw()
 		  end
 		  
 		  print("score: " .. score, 0, 0, 7)
-		  print("caught: " .. caught_cats, 48, 0, 7)
-		  print("stage " .. stage, 100, 0, 7)
+		  print("escaped: " .. escaped_cats .. "/3", 80, 0, 7)
 		  
 		end
 end
@@ -637,7 +670,8 @@ function cat_actor(floor)
     cat.base_update()
     cat.x -= 1
     if cat.x < -8 then
-      cat.x = 128
+      sfx(8)
+      cat.escaped = true
     end
   end
 
@@ -656,7 +690,8 @@ function cat_actor2(floor)
 			 cat.base_update()
     cat.x -= 2
     if cat.x < -8 then
-      cat.x = 128
+      sfx(8)
+      cat.escaped = true
     end
   end
 
@@ -717,7 +752,8 @@ function cat_actor5(floor)
 			 cat.base_update()
     cat.x -= 2
     if cat.x < -8 then
-      cat.x = 128
+      sfx(8)
+      cat.escaped = true
     end
   end
 
@@ -763,9 +799,10 @@ function base_bigcat_actor(sprites, floor)
 
     if bigcat.current_state == 1 then
 		    bigcat.x -= 1
-		    if bigcat.x < -16 then
-		      bigcat.x = 128
-		    end
+      if bigcat.x < -16 then
+        sfx(8)
+        bigcat.escaped = true
+      end
 		  elseif bigcat.current_state == 2 then
 		    -- stunned
 		    bigcat.x += 1
