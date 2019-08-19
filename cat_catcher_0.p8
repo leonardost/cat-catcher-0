@@ -618,7 +618,6 @@ function actor(x, y, states)
     states[self.current_state].update()
   end
   function self.draw()
-    print(states[self.current_state].name)
     states[self.current_state].draw(self.x, self.y)
   end
 
@@ -628,11 +627,9 @@ end
 -->8
 function base_cat_actor(sprites, floor)
   local life = 1
-  local cat1 = sprites[1]
-  local cat2 = sprites[2]
   local animation = animation()
-  animation.add_frame(cat1, 8)
-  animation.add_frame(cat2, 8)
+  animation.add_frame(sprites[1], 8)
+  animation.add_frame(sprites[2], 8)
   local walking = state(
   	 "walking",
   	 animation
@@ -659,7 +656,7 @@ function base_cat_actor(sprites, floor)
 	 cat.update_functions = {}
 
   function cat.base_update()
-    for f in all(cat.update_functions) do f() end  
+    for f in all(cat.update_functions) do f() end
   end
   
   return cat
@@ -997,10 +994,9 @@ function torch_actor(x, y)
   animation.add_frame(sprites[2], 8)
   animation.add_frame(sprites[3], 8)
   local idle = state("idle", animation)
-  local torch = actor(x, y, { iole })
+  local torch = actor(x, y, { idle })
   
   function torch.update()
-    print("uou")
     torch.update_state()
   end
   
