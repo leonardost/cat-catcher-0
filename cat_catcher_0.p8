@@ -39,6 +39,8 @@ function _init()
   stage = 3
   caught_cats = 0
   escaped_cats = 0
+  -- cats that were either captured or escaped
+  finished_cats = 0
   tries = 3
   floor_base_y = 40
 
@@ -51,7 +53,7 @@ function _init()
   4 = ending
   5 = game over
   --]]
-  game_state = 1
+  game_state = 2
 
   girl = girl_actor(8, floor_base_y + 32 * current_floor)
   add(actors, girl)
@@ -126,6 +128,20 @@ function _init()
     { 10, 220, 2 },
     { 12, 290, 1 },
     { 11, 380, 2 },
+    { 9, 450, 2 },
+    { 9, 470, 1 },
+    { 9, 530, 0 },
+    { 10, 650, 2 },
+    { 10, 670, 1 },
+    { 10, 690, 0 },
+    { 10, 710, 1 },
+    { 10, 730, 2 },
+    { 12, 730, 1 },
+    { 10, 750, 1 },
+    { 12, 750, 2 },
+    { 10, 770, 0 },
+    { 11, 830, 0 },
+    { 13, 1050, 1 },
   }
 
   -- cats used for testing
@@ -166,6 +182,7 @@ function _update()
   	   game_state = 2
   	   escaped_cats = 0
   	   caught_cats = 0
+  	   finished_cats = 0
   	   actors = {}
   	   add(actors, girl)
   	   add(actors, elevator)
@@ -211,16 +228,23 @@ function _update()
       obj.update()
     end
     if obj.escaped == true then
-      escaped_cats += 1
-      if escaped_cats == 3 then
-        game_state = 1
-        t = 0
-        tries -= 1
-        if tries == 0 then
-          game_state = 5
-        end
-      end
+      if not obj.bonus then
+		      escaped_cats += 1
+		      if escaped_cats == 3 then
+		        game_state = 1
+		        t = 0
+		        tries -= 1
+		        if tries == 0 then
+		          game_state = 5
+		        end
+		      end
+		    end
+		    finished_cats += 1
       del(actors, obj)
+      if finished_cats == #cat_generation[stage] then
+ 	      stage_cleared_t = 45
+ 	      return
+	     end
     end
   end
 
@@ -240,7 +264,7 @@ function _update()
     paw.t -= 1
     if
       paw.t == 0
-      and caught_cats + escaped_cats == #cat_generation[stage]
+      and finished_cats == #cat_generation[stage]
     then
       stage_cleared_t = 45
     end
@@ -335,6 +359,7 @@ function catch()
     then
 	 	   score += actor.value
 	 	   caught_cats += 1
+	 	   finished_cats += 1
 	 	   paw = {
 	 	     t = 15,
 	 	     x = actor.x,
@@ -804,6 +829,28 @@ function cat_actor5(floor)
   return climber(cat, 2)
 end
 
+-- bonus green cat
+function cat_actor_bonus(floor)
+  local sprites = {
+    sprite(1, 1, { 53 }),
+    sprite(1, 1, { 54 }),
+  }
+  local cat = base_cat_actor(sprites, floor)
+
+  function cat.update()
+    cat.update_state()
+    cat.base_update()
+    cat.x -= 4
+    if cat.x < -8 then
+      sfx(8)
+      cat.escaped = true
+    end
+  end
+  cat.bonus = true
+  cat.value = 1000
+  return cat
+end
+
 -- black cat with helmet
 function cat_actor6(floor)
   local sprites = {
@@ -999,6 +1046,8 @@ cat_map = {
   bigcat_actor5,
   -- 11 - big black cat with helmet
   bigcat_actor6,
+  -- 12 - bonus green cat
+  cat_actor_bonus,
 }
 -->8
 function elevator_actor(x, y)
