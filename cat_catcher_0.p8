@@ -142,6 +142,9 @@ function _init()
     { 11, 830, 0 },
     { 13, 1050, 1 },
   }
+  cat_generation[4] = {
+    { 0, 1, 1 }
+  }
 
   -- cats used for testing
   --[[
@@ -203,8 +206,10 @@ function _update()
   	     end
   	   elseif stage == 4 then
   	     -- add animations
-  	     add(actors, quasar_actor(90, 98))
-  	     add(actors, portal_entrance_actor(100, 38))
+  	     add(actors, quasar_actor(80, 98))
+  	     local portals = create_portals_between(1, 1)
+  	     add(actors, portals[1])
+  	     add(actors, portals[2])
   	   end
   	   t = 0
   	 end
@@ -227,9 +232,29 @@ function _update()
   end
 
   for obj in all(actors) do
+  
+    if obj.delete_me then
+      del(actors, obj)
+    end
     if obj.update != nil then
       obj.update()
     end
+    
+    if obj.is_portal and obj.direction == 0 then
+      for obj2 in all(actors) do
+        if
+          obj2.is_cat
+          and obj2.floor == obj.floor
+          and obj.x + 8 > obj2.x
+          and obj.x < obj2.x
+        then
+          sfx(10)
+          obj2.floor = obj.move_to_floor
+          obj2.x = obj.move_to_x
+        end 
+      end
+    end
+    
     if obj.escaped == true then
       if not obj.bonus then
 		      escaped_cats += 1
@@ -415,8 +440,14 @@ function _draw()
 		  
 		  rectfill(girl.x + 1, girl.y + 1, girl.x + 15, girl.y + 15, 0)
 		  for gfx in all(actors) do
-		    if gfx.draw != nil then
-		      gfx.draw()
+		    if gfx.draw != nil and not gfx.delete_me then
+		      if gfx.swap_colors then
+		        pal(14, 10)
+		        gfx.draw()
+		        pal()
+		      else
+  		      gfx.draw()
+  		    end
 		    end
 		    if gfx.is_girl and stage == 3 then
 		      palt(8, true)
@@ -1208,7 +1239,9 @@ function quasar_actor(x, y)
   return quasar
 end
 
-function portal_entrance_actor(x, y)
+-- direction = 0 = entrance
+-- direction = 1 = exit
+function portal_actor(x, y, direction)
 	 local t = 0
 	 
   local sprites = {
@@ -1222,50 +1255,61 @@ function portal_entrance_actor(x, y)
     sprite(1, 2, { 199, 215 }),
     sprite(1, 2, { 200, 216 }),
   }
-  local animation = animation()
+  local animation_opening = animation()
   for i = 1, 8 do
-    animation.add_frame(sprites[i], 2)
+    animation_opening.add_frame(sprites[i], 2)
   end
-  animation.add_frame(sprites[9], 30)
+  local opening = state("opening", animation_opening)
+
+  local animation_idle = animation()
+  animation_idle.add_frame(sprites[9], 30)
+  local idle = state("idle", animation_idle)
+
+  local animation_closing = animation()
   for i = 8, 1, -1 do
-    animation.add_frame(sprites[i], 2)
+    animation_closing.add_frame(sprites[i], 2)
   end
-  local idle = state("idle", animation)
+  local closing = state("closing", animation_closing)
 
-  local portal = actor(x, y, { idle })
+  local portal = actor(
+    x,
+    y,
+    { opening, idle, closing }
+  )
   function portal.update()
+    t += 1
     portal.update_state()
+    
+    if t == 60 and portal.current_state == 2 then
+      portal.change_to_state(3)
+    end
+  end
+  
+  opening.set_finished_callback(function()
+    t = 0
+    portal.change_to_state(2)
+  end)
+  closing.set_finished_callback(function()
+    t = 0
+    portal.delete_me = true
+  end)
+
+  portal.is_portal = true
+  portal.direction = direction
+  if direction == 1 then
+    portal.swap_colors = true
   end
   return portal
 end
 
-function portal_exit_actor(x, y)
-	 local t = 0
-	 
-  local sprites = {
-    sprite(1, 2, { 194, 210 }),
-    sprite(1, 2, { 195, 211 }),
-    sprite(1, 2, { 196, 212 }),
-    sprite(1, 2, { 197, 213 }),
-    sprite(1, 2, { 198, 214 }),
-    sprite(1, 2, { 199, 215 }),
-    sprite(1, 2, { 200, 216 }),
-    sprite(1, 2, { 201, 217 }),
-    sprite(1, 2, { 192, 208 }),
-  }
-  local animation = animation()
-  for i = 1, 9 do
-    animation.add_frame(sprites[i], 3)
-  end
-  local idle = state("idle", animation)
-
-  local portal = actor(x, y, { idle })
-  function portal.update()
-    portal.update_state()
-  end
-  return portal
+function create_portals_between(floor1, floor2)
+  local portal_entrance = portal_actor(88, floor_base_y - 2 + floor1 * 32, 0)
+  local portal_exit = portal_actor(40, floor_base_y - 2 + floor2 * 32, 1)
+  portal_entrance.move_to_x = portal_exit.x - 2
+  portal_entrance.move_to_floor = floor2
+  portal_entrance.floor = floor1
+	 return { portal_entrance, portal_exit }
 end
-
 __gfx__
 000000005050005550500005444444440000000000000000555555550444444033333333111111110000000000000090a0a00077a0a000070066a00000000000
 00000000555000055550000544b4b44405555500000000006666666644999944b3b3b3a3cccccccc4040009440400004aaa00007aaa00007066666a000000000
@@ -1519,7 +1563,7 @@ __map__
 060606060606060606060606060606066a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a39393a393a3939399697969796979697a8a8a8a8a8b8a8a8a8a8a8a8a8a8b8a800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000868687868786879800000000000089009d00009900008900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 006667004d4e0000004c000000004f00006667005c0000000000005c00000000006667000000000000969697969796970066679800000098000000999800009900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-007677000000480000004b0000480000007677006c0000006d00006c0000006d0076770000000000000f008786878687007677000000008d000088b70000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+007677000000480000004b0000480000007677006c0000006d00006c0000006d0076770000000000000f008786878687007677000000008d0000880000b7000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 060606060606060606060606060606066a6a6b6a6a6a6a6a6a6a6a6a6a6a6b6a393a39393939393a3939969796979697a8b8a8a8a8a8a8b8a8a8a8a8a8a8a8a800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 000000000000000000000000000000000000000000000000000000000000000000000000000000000000000086878687980000888c00000098000000009d008900000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00666700004c000000004d4e00004c00006667000000000000005c00005c00000066670000000000000000000096969700666700008900008d8800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -1545,6 +1589,7 @@ __sfx__
 000400000562004610026000060000600006000060000600006000060000600006000060000600006000060000600006000060000600006000060000600006000060000600006000060000600006000060000600
 001000000c550005000c5500e55010550005000c5500e5501055013550005001155000500105500c550005001755015550115500050010550005000e5500c5500b5500050016550005000c550005000050000000
 001000001435015350333501f35000000000000000000000000001a350000000000000000000002c3000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0005000008050090500a0500b0500d0500f05012050160501b050200503c0003e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __music__
 00 04034344
 
