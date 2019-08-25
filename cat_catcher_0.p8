@@ -52,7 +52,7 @@ function _init()
   4 = ending
   5 = game over
   --]]
-  game_state = 2
+  game_state = 0
 
   girl = girl_actor(8, floor_base_y + 32 * current_floor)
   add(actors, girl)
@@ -199,12 +199,34 @@ function _init()
 
   small_paw = sprite(1, 1, { 4 })
   big_paw = sprite(2, 2, { 104, 105, 120, 121 })
+  girl.x = -32
+  girl.y = 64
+  cat_opening = cat_actor_opening()
+  opening_phase = 1
+  bigcat_opening = bigcat_actor(0)
 end
 
 function _update()
   t += 1
 
   if game_state == 0 then
+
+    if t < 180 then
+		    girl.walk(1)  
+		    if cat_opening.x <= 128 then
+		      cat_opening.update()
+		    end
+		  elseif t == 180 then
+      girl.change_to_state(5)
+      bigcat_opening.y = 64
+      bigcat_opening.x = girl.x + 24
+    elseif t < 500 then
+      girl.x -= 1
+      if bigcat_opening.x >= -16 then
+        bigcat_opening.update()
+      end
+		  end
+  
     if btnp(❎) then
       game_state = 1
       stage = 1
@@ -215,6 +237,9 @@ function _update()
   elseif game_state == 1 then
     -- stage introduction
   	 if t == 60 then
+    	 girl.x = 8
+    	 girl.y = floor_base_y + 32 * current_floor
+				  girl.change_to_state(1)
   	   game_state = 2
   	   escaped_cats = 0
   	   caught_cats = 0
@@ -439,9 +464,19 @@ function _draw()
   cls(1)
   
   if game_state == 0 then
-			 print("cat catcher 0", 64 - 26, 61)
+			 print("cat catcher 0", 64 - 26, 32)
+			 pset(37, 36, 7)
+			 pset(36, 36, 7)
+			 pset(35, 35, 7)
+			 pset(35, 34, 7)
+			 pset(34, 33, 7)
+			 pset(33, 33, 7)
 			 print("press ❎ to start", 32, 90)
 			 print("lst 2019", 64 - 16, 120)
+
+    girl.draw()
+    cat_opening.draw()
+    bigcat_opening.draw()
   elseif game_state == 1 then
     print("stage " .. stage, 64 - 14, 61)
     print("tries x " .. tries, 46, 80)
@@ -570,11 +605,20 @@ function girl_actor(x, y)
     animation_walk
   )
 
+  local girl7 = sprite(2, 2, { 21, 20, 37, 36 }, transparent_color, true)
+  animation_walk_left = animation()
+  animation_walk_left.add_frame(girl7, 30)
+  local walk_left_state = state(
+    "walk_left",
+    animation_walk_left
+  )
+
   local girl = actor(x, y, {
     idle_state,
     blink_state,
     yawn_state,
-    walk_state
+    walk_state,
+    walk_left_state,
   })
   
   function girl.update()
@@ -648,12 +692,13 @@ function girl_actor(x, y)
 end
 
 -->8
-function sprite(w, h, sprites, transparent_color)
+function sprite(w, h, sprites, transparent_color, invert_h)
   local w = w
   local h = h
   local sprites = sprites
   local self = {}
   local transparent_color = transparent_color
+  local invert_h = false or invert_h
 
   function self.draw(x, y)
 	   if transparent_color != nil then
@@ -665,7 +710,10 @@ function sprite(w, h, sprites, transparent_color)
 	       spr(
   	       sprites[i * w + j + 1],
   	       x + j * 8,
-  	       y + i * 8
+  	       y + i * 8,
+  	       1,
+  	       1,
+  	       invert_h
   	     )
   	   end
   	 end
@@ -1137,6 +1185,29 @@ function bigcat_actor6(floor)
   return bigcat
 end
 
+function cat_actor_opening()
+  local sprites = {
+    sprite(1, 1, { 126 }),
+    sprite(1, 1, { 127 }),
+  }
+  local cat = base_cat_actor(sprites, 0)
+
+  function cat.update()
+    cat.update_state()
+    cat.base_update()
+    cat.x += 1
+    if cat.x > 128 then
+      sfx(8)
+      cat.delete_me = true
+    end
+  end
+
+  cat.x = -8
+  cat.y = 72
+
+  return cat
+end
+
 cat_map = {
   -- 0 - normal cat
   [0] = cat_actor,
@@ -1299,15 +1370,6 @@ function quasar_actor(x, y)
     sprite(1, 1, { 172 }),
     sprite(1, 1, { 173 }),
     sprite(1, 1, { 189 }),
-    
-    --[[
-    sprite(1, 1, { 175 }),
-    sprite(1, 1, { 174 }),
-    sprite(1, 1, { 159 }),
-    sprite(1, 1, { 158 }),
-    sprite(1, 1, { 143 }),
-    sprite(1, 1, { 142 }),
-    --]]
   }
   local animation = animation()
   for i = 1, 14 do
@@ -1479,14 +1541,14 @@ a1a00001a1a00001999000099990000900676767bbb0000bbbb0000ba5a00005a5a0000556666654
 50600605000000055a5555a5500000554a4444a4400000445666666d766666650577755775775550b3bbbbbbbbab3bbb0000440000b0b0000003b030bb03b000
 560000650000000555a55a555555555544a44a44447474445666666d766666650577755555555755bbbbb3bbbbbb3bbb0000ff00000b00000030b00000bbb3bb
 0555555500000005555e55555555555544494444444747445666666d766666650557555777557775bbbbbb3bbbb3bbbb00004400000b00000000b00000033000
-5000000055555550655555666555555574444477744444445666666d766666650000557777755775919111009191111001011100010111100000000000000000
-5000000056000065555555555555555544444444444444445666666d766666650005577777775555999111109991111000011110000111100000000000000000
-5000000050600605555665555555555044477444444444405666666d766666650005777777777500a0a11110a0a11110a0a11110a0a111100000000000000000
-5000000050067005556006555555055044700744444404405666666d766666650005777777777500000040000000400000000000000000000000000000000000
-5000000050066005550000550550055544000044044004445666666d766666650005577557777500000040000000400000000000000000000000000000000000
-5000000050600605556000550550055544700044044004445666666d766666650000555555775500010110100101101001011010010110100000000000000000
-5000000056000065566000560555005547700047044400445666666d766666650000000005555000010110100100100001011010010010000000000000000000
-5000000005555555000000660556006600000077044700775666666d766666650000000000000000010110101011111001011010101111100000000000000000
+5000000055555550655555666555555574444477744444445666666d766666650000557777755775919111009191111001011100010111105500050550000505
+5000000056000065555555555555555544444444444444445666666d766666650005577777775555999111109991111000011110000111105000055550000555
+5000000050600605555665555555555044477444444444405666666d766666650005777777777500a0a11110a0a11110a0a11110a0a1111050000a5a50000a5a
+5000000050067005556006555555055044700744444404405666666d766666650005777777777500000040000000400000000000000000005555555555555555
+5000000050066005550000550550055544000044044004445666666d766666650005577557777500000040000000400000000000000000005555555555555555
+5000000050600605556000550550055544700044044004445666666d766666650000555555775500010110100101101001011010010110105050050550500505
+5000000056000065566000560555005547700047044400445666666d766666650000000005555000010110100100100001011010010010005050050555505505
+5000000005555555000000660556006600000077044700775666666d766666650000000000000000010110101011111001011010101111105050050550000050
 00aaaa000000665000aaaa000000000000aaaa0000000000555555555555555500000000000900000000000000000000007777000000000009a00a9009a00090
 04aaaaa00000655504aaaaa00000665504aaaaa0000066555566665555666655006000000000000000000ffffff0000006666670000000009a9700a99a9700a9
 444444440000005544444444000065554444444400006555566665555666666506760000000000000000f000000f0000d6656667000c0000a000009a0000a09a
