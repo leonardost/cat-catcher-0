@@ -280,6 +280,7 @@ function _update()
   	 if t == 60 then
       stage += 1
       if stage == 5 then
+        sfx(8)
         game_state = 6
       else
     	   game_state = 1
