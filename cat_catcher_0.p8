@@ -2,7 +2,7 @@ pico-8 cartridge // http://www.pico-8.com
 version 18
 __lua__
 --[[
-  cat catcher 0 v1.0.0 - (c) lst 2019
+  cat catcher 0 v1.0.1 - (c) lst 2019
   ===================================
 
   cat catcher 0 is the prequel
@@ -22,6 +22,7 @@ __lua__
 
 function _init()
   t = 0
+  version = "v1.0.1"
   -- actors can have .draw()
   -- and/or .update() methods
   actors = {}
@@ -497,6 +498,7 @@ function _draw()
 			 pset(34, 33, 7)
 			 pset(33, 33, 7)
 			 print("press ❎ to start", 32, 90)
+			 print(version, 52, 112)
 			 print("lst 2019", 64 - 16, 120)
 
     girl.draw()
