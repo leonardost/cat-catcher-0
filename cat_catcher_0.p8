@@ -35,7 +35,6 @@ function _init()
 
   current_floor = 0
   score = 0
-  high_score = 0
   stage = 1
   caught_cats = 0
   escaped_cats = 0
@@ -199,12 +198,17 @@ function _init()
 
   small_paw = sprite(1, 1, { 4 })
   big_paw = sprite(2, 2, { 104, 105, 120, 121 })
+  
+  init_opening()
+end
+
+function init_opening()
   girl.x = -32
   girl.y = 64
   cat_opening = cat_actor_opening()
   opening_phase = 1
   bigcat_opening = bigcat_actor(0)
-  
+  score = 0
   music(5)
 end
 
@@ -293,6 +297,7 @@ function _update()
     if btnp(❎) then
       game_state = 0
       t = 0
+      init_opening()
     end
     return
   elseif game_state == 6 then
@@ -300,9 +305,7 @@ function _update()
     if btnp(❎) then
       game_state = 0
       t = 0
-      girl.x = -32
-      girl.y = 64
-      music(5)
+      init_opening()
     end
     return
   end
